@@ -72,6 +72,7 @@ SRC += $(wildcard $(CURDIR)/main.c)
 
 # -----------------------------------------------------------------------------
 
+CFLAGS += -DENABLE_LEFT_LED
 CFLAGS += -mmcu=$(MCU)      # processor type; must match real life
 CFLAGS += -DF_CPU=$(F_CPU)  # processor frequency; must match initialization
 			    #   in source

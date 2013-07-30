@@ -67,6 +67,15 @@
 #define  TWI_ADDR_WRITE  ( (TWI_ADDR<<1) | TW_WRITE )
 #define  TWI_ADDR_READ   ( (TWI_ADDR<<1) | TW_READ  )
 
+#ifdef ENABLE_LEFT_LED
+extern uint8_t _led_11_state;  // left red (top)
+extern uint8_t _led_12_state;  // left yellow (middle)
+extern uint8_t _led_13_state;  // left green (bottom)
+#define LED_11_BIT_SHIFT    7  // in A
+#define LED_12_BIT_SHIFT    6  // in B
+#define LED_13_BIT_SHIFT    7  // in B
+#endif
+
 // ----------------------------------------------------------------------------
 
 /**                                        functions/mcp23018__init/description
@@ -92,11 +101,21 @@ uint8_t mcp23018__init(void) {
     if (ret) goto out;  // make sure we got an ACK
     twi__send(IODIRA);
     #if OPT__MCP23018__DRIVE_ROWS
+#ifndef ENABLE_LEFT_LED
         twi__send(0b11111111);  // IODIRA
         twi__send(0b11000000);  // IODIRB
+#else
+        twi__send(0b01111111);  // IODIRA
+        twi__send(0b00000000);  // IODIRB
+#endif
     #elif OPT__MCP23018__DRIVE_COLUMNS
+#ifndef ENABLE_LEFT_LED
         twi__send(0b10000000);  // IODIRA
         twi__send(0b11111111);  // IODIRB
+#else
+        twi__send(0b00000000);  // IODIRA
+        twi__send(0b00111111);  // IODIRB
+#endif
     #endif
     twi__stop();
 
@@ -109,11 +128,21 @@ uint8_t mcp23018__init(void) {
     if (ret) goto out;  // make sure we got an ACK
     twi__send(GPPUA);
     #if OPT__MCP23018__DRIVE_ROWS
+#ifndef ENABLE_LEFT_LED
         twi__send(0b11111111);  // GPPUA
         twi__send(0b11000000);  // GPPUB
+#else
+        twi__send(0b01111111);  // GPPUA
+        twi__send(0b00000000);  // GPPUB
+#endif
     #elif OPT__MCP23018__DRIVE_COLUMNS
+#ifndef ENABLE_LEFT_LED
         twi__send(0b10000000);  // GPPUA
         twi__send(0b11111111);  // GPPUB
+#else
+        twi__send(0b00000000);  // GPPUA
+        twi__send(0b00111111);  // GPPUB
+#endif
     #endif
     twi__stop();
 
@@ -125,8 +154,13 @@ uint8_t mcp23018__init(void) {
     ret = twi__send(TWI_ADDR_WRITE);
     if (ret) goto out;  // make sure we got an ACK
     twi__send(OLATA);
+#ifndef ENABLE_LEFT_LED
     twi__send(0b11111111);  //OLATA
     twi__send(0b11111111);  //OLATB
+#else
+    twi__send(0b11111111 & ~(_led_11_state<<LED_11_BIT_SHIFT));  //OLATA
+    twi__send(0b11111111 & ~(_led_12_state<<LED_12_BIT_SHIFT) & ~(_led_13_state<<LED_13_BIT_SHIFT));  //OLATB
+#endif
 
 out:
     twi__stop();
@@ -172,7 +206,11 @@ uint8_t mcp23018__update_matrix(bool matrix[OPT__KB__ROWS][OPT__KB__COLUMNS]) {
             twi__start();
             twi__send(TWI_ADDR_WRITE);
             twi__send(GPIOB);
+#ifndef ENABLE_LEFT_LED
             twi__send( 0xFF & ~(1<<(5-row)) );
+#else
+            twi__send( 0xFF & ~(1<<(5-row)) & ~(_led_12_state<<LED_12_BIT_SHIFT) & ~(_led_13_state<<LED_13_BIT_SHIFT));
+#endif
             twi__stop();
 
             // read column data
@@ -194,7 +232,11 @@ uint8_t mcp23018__update_matrix(bool matrix[OPT__KB__ROWS][OPT__KB__COLUMNS]) {
         twi__start();
         twi__send(TWI_ADDR_WRITE);
         twi__send(GPIOB);
+#ifndef ENABLE_LEFT_LED
         twi__send(0xFF);
+#else
+        twi__send( 0xFF & ~(_led_12_state<<LED_12_BIT_SHIFT) & ~(_led_13_state<<LED_13_BIT_SHIFT));
+#endif
         twi__stop();
 
     #elif OPT__MCP23018__DRIVE_COLUMNS
@@ -204,7 +246,11 @@ uint8_t mcp23018__update_matrix(bool matrix[OPT__KB__ROWS][OPT__KB__COLUMNS]) {
             twi__start();
             twi__send(TWI_ADDR_WRITE);
             twi__send(GPIOA);
+#ifndef ENABLE_LEFT_LED
             twi__send( 0xFF & ~(1<<col) );
+#else
+            twi__send( 0xFF & ~(1<<col) & ~(_led_11_state<<LED_11_BIT_SHIFT));
+#endif
             twi__stop();
 
             // read row data
@@ -226,7 +272,11 @@ uint8_t mcp23018__update_matrix(bool matrix[OPT__KB__ROWS][OPT__KB__COLUMNS]) {
         twi__start();
         twi__send(TWI_ADDR_WRITE);
         twi__send(GPIOA);
+#ifndef ENABLE_LEFT_LED
         twi__send(0xFF);
+#else
+        twi__send( 0xFF & ~(_led_11_state<<LED_11_BIT_SHIFT));
+#endif
         twi__stop();
 
     #endif

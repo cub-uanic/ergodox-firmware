@@ -74,6 +74,11 @@ int main(void) {
 
     kb__led__state__power_on();
 
+#ifdef ENABLE_LEFT_LED
+    // must do this once for led state to be pushed over
+    mcp23018__init();
+#endif
+
     usb__init();
     while (!usb__is_configured());
     kb__led__delay__usb_init();  // give the OS time to load drivers, etc.
